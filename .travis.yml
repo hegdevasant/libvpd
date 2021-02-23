@@ -6,10 +6,17 @@ sudo: required
 
 services: docker
 
-env:
-    matrix:
-    - RUN_ON_CONTAINER=fedora-rawhide
+before_install:
+  dnf -y install gcc-g++ make sqlite-devel zlib-devel libstdc++-devel
+  dnf -y install automake rpm-build git libvpd libtool
 
-script:
-    - docker build --pull -t ${RUN_ON_CONTAINER} -f libvpd-ci/Dockerfile-${RUN_ON_CONTAINER} . &&
-      docker run --volume $HOME/.ccache:/root/.ccache --volume `pwd`:/build --rm -t $RUN_ON_CONTAINER bash -c "./libvpd-ci/build-${RUN_ON_CONTAINER}.sh";
+addons:
+  coverity_scan:
+    project:
+      name: "hegdevasant/libvpd"
+      description: "Build submitted via Travis CI"
+    notification_email: hegdevasant@linux.vnet.ibm.com
+      #build_command_prepend: "cov-configure --comptype gcc --compiler powerpc64-linux-gcc --template; cov-configure --comptype gcc --compiler powerpc64le-linux-gnu-gcc; cov-configure --comptype gcc --compiler arm-linux-gnueabi-gcc; cov-configure --comptype gcc --compiler x86_64-linux-gnu-gcc"
+    build_command_prepend: "./bootstrap.sh && ./configure"
+    build_command: "make"
+    branch_pattern: coverity_scan
